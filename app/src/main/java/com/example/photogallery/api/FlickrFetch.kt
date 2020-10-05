@@ -18,19 +18,9 @@ class FlickrFetch {
     private val flickrApi: FlickrApi
 
     init {
-//        val retrofit: Retrofit = Retrofit.Builder()
-//            .baseUrl("https://api.flickr.com/")
-//            .addConverterFactory(GsonConverterFactory.create())
-//            .build()
-
-        val gson: Gson =  GsonBuilder()
-            .registerTypeAdapter(PhotoResponse::class.java, PhotoDeserializer())
-            .create()
-
-        val gsonConverter: GsonConverterFactory = GsonConverterFactory.create(gson)
         val retrofit: Retrofit = Retrofit.Builder()
             .baseUrl("https://api.flickr.com/")
-            .addConverterFactory(gsonConverter)
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         flickrApi = retrofit.create(FlickrApi::class.java)
@@ -38,18 +28,20 @@ class FlickrFetch {
 
     fun fetchPhotos(): LiveData<List<GalleryItem>> {
         val responseLiveData: MutableLiveData<List<GalleryItem>> = MutableLiveData()
-
-        val testRequest: Call<PhotoResponse> = flickrApi.fetchPhotosT()
         val flickrRequest: Call<FlickrResponse> = flickrApi.fetchPhotos()
 
-        testRequest.enqueue(object : Callback<PhotoResponse> {
-            override fun onFailure(call: Call<PhotoResponse>, t: Throwable) {
+        flickrRequest.enqueue(object : Callback<FlickrResponse> {
+            override fun onFailure(call: Call<FlickrResponse>, t: Throwable) {
                 Log.e(TAG, "failed to fetch photos", t)
             }
 
-            override fun onResponse(call: Call<PhotoResponse>, response: Response<PhotoResponse>) {
+            override fun onResponse(
+                call: Call<FlickrResponse>,
+                response: Response<FlickrResponse>
+            ) {
                 Log.d(TAG, "Response received")
-                val photoResponse: PhotoResponse? = response.body()
+                val flickrResponse: FlickrResponse? = response.body()
+                val photoResponse: PhotoResponse? = flickrResponse?.photos
                 var galleryItems: List<GalleryItem> = photoResponse?.galleryItems ?: mutableListOf()
                 galleryItems = galleryItems.filterNot {
                     it.url.isBlank()
@@ -58,6 +50,6 @@ class FlickrFetch {
                 responseLiveData.value = galleryItems
             }
         })
-        return  responseLiveData
+        return responseLiveData
     }
 }
