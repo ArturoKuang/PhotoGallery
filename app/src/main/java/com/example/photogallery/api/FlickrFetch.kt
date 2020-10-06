@@ -13,6 +13,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 private const val TAG = "FlickerFetch"
+private const val FLICKR_STARTING_PAGE_INDEX = 1
 
 class FlickrFetch {
     private val flickrApi: FlickrApi
@@ -28,7 +29,7 @@ class FlickrFetch {
 
     fun fetchPhotos(): LiveData<List<GalleryItem>> {
         val responseLiveData: MutableLiveData<List<GalleryItem>> = MutableLiveData()
-        val flickrRequest: Call<FlickrResponse> = flickrApi.fetchPhotos()
+        val flickrRequest: Call<FlickrResponse> = flickrApi.fetchPhotos(FLICKR_STARTING_PAGE_INDEX)
 
         flickrRequest.enqueue(object : Callback<FlickrResponse> {
             override fun onFailure(call: Call<FlickrResponse>, t: Throwable) {
@@ -48,6 +49,33 @@ class FlickrFetch {
                 }
 
                 responseLiveData.value = galleryItems
+            }
+        })
+        return responseLiveData
+    }
+
+    fun fetchPhotos(page: Int): List<GalleryItem> {
+        var responseLiveData: List<GalleryItem> = listOf()
+        val flickrRequest: Call<FlickrResponse> = flickrApi.fetchPhotos(page)
+
+        flickrRequest.enqueue(object : Callback<FlickrResponse> {
+            override fun onFailure(call: Call<FlickrResponse>, t: Throwable) {
+                Log.e(TAG, "failed to fetch photos", t)
+            }
+
+            override fun onResponse(
+                call: Call<FlickrResponse>,
+                response: Response<FlickrResponse>
+            ) {
+                Log.d(TAG, "Response received")
+                val flickrResponse: FlickrResponse? = response.body()
+                val photoResponse: PhotoResponse? = flickrResponse?.photos
+                var galleryItems: List<GalleryItem> = photoResponse?.galleryItems ?: mutableListOf()
+                galleryItems = galleryItems.filterNot {
+                    it.url.isBlank()
+                }
+
+                responseLiveData = galleryItems
             }
         })
         return responseLiveData
