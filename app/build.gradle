@@ -22,6 +22,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    buildTypes.each {
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file("local.properties").newDataInputStream())
+        def flickApiKey = properties.getProperty("flick_api_key", "")
+
+        it.buildConfigField 'String', "FLICKR_API_KEY", flickApiKey
+
+        it.resValue 'string', "api_key", flickApiKey
+    }
 }
 
 dependencies {
