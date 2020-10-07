@@ -14,12 +14,4 @@ interface FlickrApi {
             "&nojsoncallback=1" +
             "&extras=url_s")
     fun fetchPhotos(@Query("page") page: Int): Call<FlickrResponse>
-
-    @GET("services/rest/?method=flickr.interestingness.getList" +
-            "&api_key=$API_KEY" +
-            "&format=json" +
-            "&nojsoncallback=1" +
-            "&extras=url_s")
-    fun searchPhotos(@Query("page") page: Int): Call<FlickrResponse>
-
 }

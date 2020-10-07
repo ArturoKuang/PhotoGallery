@@ -12,6 +12,7 @@ class FlickrPagingSource(): PagingSource<Int, GalleryItem>() {
         val position = params.key ?: FLICKR_STARTING_PAGE_INDEX
         return try {
             val response = FlickrFetch().fetchPhotos(position)
+
             LoadResult.Page(
                 data = response,
                 prevKey = if (position == FLICKR_STARTING_PAGE_INDEX) null else position - 1,

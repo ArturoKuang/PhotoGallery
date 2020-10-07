@@ -9,8 +9,17 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
 
 private const val TAG = "PhotoGalleryFragment"
 
@@ -18,6 +27,8 @@ class PhotoGalleryFragment : Fragment() {
 
     private lateinit var photoRecyclerView: RecyclerView
     private lateinit var photoGalleryVideoModel: PhotoGalleryViewModel
+    private var searchJob: Job? = null
+    private val adapter = GalleryItemAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,11 +48,14 @@ class PhotoGalleryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        photoGalleryVideoModel.galleryItemLiveData.observe(
-            viewLifecycleOwner,
-            Observer { galleryItems ->
-                photoRecyclerView.adapter = PhotoAdapter(galleryItems)
-            })
+//        photoGalleryVideoModel.galleryItemLiveData.observe(
+//            viewLifecycleOwner,
+//            Observer { galleryItems ->
+//                photoRecyclerView.adapter = PhotoAdapter(galleryItems)
+//            })
+
+        photoRecyclerView.adapter = adapter
+        search()
     }
 
     private class PhotoHolder(itemTextView: TextView) : RecyclerView.ViewHolder(itemTextView) {
@@ -63,6 +77,15 @@ class PhotoGalleryFragment : Fragment() {
         }
 
         override fun getItemCount(): Int = galleryItems.size
+    }
+
+    private fun search() {
+        searchJob?.cancel()
+        searchJob = lifecycleScope.launch {
+            photoGalleryVideoModel.searchRepo().collectLatest {
+                adapter.submitData(it)
+            }
+        }
     }
 
     companion object {
