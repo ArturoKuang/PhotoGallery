@@ -9,7 +9,7 @@ import com.example.photogallery.api.FlickrFetch
 import com.example.photogallery.api.FlickrRepository
 import kotlinx.coroutines.flow.Flow
 
-class PhotoGalleryViewModel : ViewModel() {
+class PhotoGalleryViewModel(private val repository: FlickrRepository) : ViewModel() {
 
     //val galleryItemLiveData: LiveData<List<GalleryItem>> = FlickrFetch().fetchPhotos()
 
@@ -21,7 +21,7 @@ class PhotoGalleryViewModel : ViewModel() {
             return lastResult
         }
 
-        val newResult: Flow<PagingData<GalleryItem>> = FlickrRepository().getSearchResultStream()
+        val newResult: Flow<PagingData<GalleryItem>> = repository.getSearchResultStream()
             .cachedIn(viewModelScope)
         currentSearchResult = newResult
         return newResult

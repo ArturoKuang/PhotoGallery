@@ -9,11 +9,12 @@ import kotlinx.coroutines.flow.Flow
 
 private const val TAG = "FlickrRepository"
 
-class FlickrRepository {
+class FlickrRepository(private val service: FlickrService) {
+    
     fun getSearchResultStream(): Flow<PagingData<GalleryItem>> {
         return Pager(
             config = PagingConfig(pageSize = NETWORK_PAGE_SIZE, enablePlaceholders = false),
-            pagingSourceFactory = { FlickrPagingSource() }
+            pagingSourceFactory = { FlickrPagingSource(service) }
         ).flow
     }
 
