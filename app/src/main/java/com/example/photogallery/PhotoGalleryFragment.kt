@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 private const val TAG = "PhotoGalleryFragment"
+private const val COLUMN_WIDTH = 300
 
 class PhotoGalleryFragment : Fragment() {
 
@@ -22,6 +24,7 @@ class PhotoGalleryFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         photoGalleryVideoModel = ViewModelProvider(this).get(PhotoGalleryViewModel::class.java)
+
     }
 
     override fun onCreateView(
@@ -31,7 +34,10 @@ class PhotoGalleryFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_photo_gallery, container, false)
         photoRecyclerView = view.findViewById(R.id.photo_recycler_view)
-        photoRecyclerView.layoutManager = GridLayoutManager(context, 3)
+        photoRecyclerView.afterMeasured {
+            val columnCount = width / COLUMN_WIDTH
+            photoRecyclerView.layoutManager = GridLayoutManager(context, columnCount)
+        }
         return view
     }
 
@@ -67,5 +73,16 @@ class PhotoGalleryFragment : Fragment() {
 
     companion object {
         fun newInstance() = PhotoGalleryFragment()
+    }
+
+    inline fun  RecyclerView.afterMeasured(crossinline f: RecyclerView.() -> Unit) {
+        viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                if (measuredWidth > 0 && measuredHeight > 0) {
+                    viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    f()
+                }
+            }
+        })
     }
 }
