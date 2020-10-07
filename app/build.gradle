@@ -46,4 +46,5 @@ dependencies {
     // optional - RxJava support
     implementation "androidx.paging:paging-rxjava2:$paging_version" // For Kotlin use paging-rxjava2-ktx
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.1.0-beta01'
+    implementation "com.squareup.okhttp3:logging-interceptor:$okhttpLoggingInterceptorVersion"
 }
