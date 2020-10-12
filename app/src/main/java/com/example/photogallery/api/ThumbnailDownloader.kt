@@ -21,7 +21,9 @@ class ThumbnailDownloader<in T>(
     : HandlerThread(TAG) {
 
     private var hasQuit = false
-    val fragmentLifeCycleObserver: LifecycleObserver =
+    private var fragmentLifecycle: Lifecycle? = null
+
+    private val fragmentLifeCycleObserver: LifecycleObserver =
         object : LifecycleObserver {
 
             @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
@@ -35,6 +37,8 @@ class ThumbnailDownloader<in T>(
             fun tearDown() {
                 Log.i(TAG, "Destroying background thread")
                 quit()
+
+                fragmentLifecycle?.removeObserver(this)
             }
         }
 
@@ -56,6 +60,11 @@ class ThumbnailDownloader<in T>(
     override fun quit(): Boolean {
         hasQuit = true
         return super.quit()
+    }
+
+    fun attachFragmentLifecycle(lifecycle: Lifecycle) {
+        fragmentLifecycle = lifecycle
+        fragmentLifecycle?.addObserver(fragmentLifeCycleObserver)
     }
 
     fun queueThumbnail(target: T, url: String) {

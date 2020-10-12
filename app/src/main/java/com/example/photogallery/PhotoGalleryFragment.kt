@@ -39,7 +39,7 @@ class PhotoGalleryFragment : Fragment() {
                 val drawable = BitmapDrawable(resources, bitmap)
                 photoHolder.bindDrawable(drawable)
             }
-        lifecycle.addObserver(thumbnailDownloader.fragmentLifeCycleObserver)
+        thumbnailDownloader.attachFragmentLifecycle(lifecycle)
     }
 
     override fun onCreateView(
@@ -75,9 +75,6 @@ class PhotoGalleryFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        lifecycle.removeObserver(
-            thumbnailDownloader.fragmentLifeCycleObserver
-        )
     }
 
     private class PhotoHolder(private val itemImageView: ImageView) : RecyclerView.ViewHolder(itemImageView) {
