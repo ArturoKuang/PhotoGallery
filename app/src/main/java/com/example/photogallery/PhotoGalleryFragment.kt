@@ -1,8 +1,11 @@
 package com.example.photogallery
 
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.StrictMode
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +17,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.photogallery.api.ThumbnailDownloader
 
 private const val TAG = "PhotoGalleryFragment"
 private const val COLUMN_WIDTH = 300
@@ -22,11 +26,20 @@ class PhotoGalleryFragment : Fragment() {
 
     private lateinit var photoRecyclerView: RecyclerView
     private lateinit var photoGalleryVideoModel: PhotoGalleryViewModel
+    private lateinit var thumbnailDownloader: ThumbnailDownloader<PhotoHolder>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         photoGalleryVideoModel = ViewModelProvider(this).get(PhotoGalleryViewModel::class.java)
 
+        retainInstance = true
+        val responseHandler = Handler()
+        thumbnailDownloader =
+            ThumbnailDownloader(responseHandler) { photoHolder, bitmap ->
+                val drawable = BitmapDrawable(resources, bitmap)
+                photoHolder.bindDrawable(drawable)
+            }
+        lifecycle.addObserver(thumbnailDownloader.fragmentLifeCycleObserver)
     }
 
     override fun onCreateView(
@@ -34,6 +47,7 @@ class PhotoGalleryFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        viewLifecycleOwner.lifecycle.addObserver(thumbnailDownloader.viewLifeCycleObserver)
         val view = inflater.inflate(R.layout.fragment_photo_gallery, container, false)
         photoRecyclerView = view.findViewById(R.id.photo_recycler_view)
         photoRecyclerView.afterMeasured {
@@ -50,6 +64,20 @@ class PhotoGalleryFragment : Fragment() {
             Observer { galleryItems ->
                 photoRecyclerView.adapter = PhotoAdapter(galleryItems)
             })
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        viewLifecycleOwner.lifecycle.removeObserver(
+            thumbnailDownloader.viewLifeCycleObserver
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        lifecycle.removeObserver(
+            thumbnailDownloader.fragmentLifeCycleObserver
+        )
     }
 
     private class PhotoHolder(private val itemImageView: ImageView) : RecyclerView.ViewHolder(itemImageView) {
@@ -75,6 +103,8 @@ class PhotoGalleryFragment : Fragment() {
                 requireContext(),
                 R.drawable.bill_up_close) ?: ColorDrawable()
             holder.bindDrawable(placeHolder)
+
+            thumbnailDownloader.queueThumbnail(holder, galleryItem.url)
         }
 
         override fun getItemCount(): Int = galleryItems.size
@@ -84,7 +114,7 @@ class PhotoGalleryFragment : Fragment() {
         fun newInstance() = PhotoGalleryFragment()
     }
 
-    inline fun  RecyclerView.afterMeasured(crossinline f: RecyclerView.() -> Unit) {
+    private inline fun  RecyclerView.afterMeasured(crossinline f: RecyclerView.() -> Unit) {
         viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 if (measuredWidth > 0 && measuredHeight > 0) {
