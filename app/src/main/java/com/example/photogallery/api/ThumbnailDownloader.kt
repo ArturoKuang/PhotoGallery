@@ -6,7 +6,6 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
 import android.util.Log
-import android.util.LruCache
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
@@ -14,8 +13,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "ThumbnailDownloader"
 private const val MESSAGE_DOWNLOAD = 0
-private const val cacheSize = 40 * 1024 * 1024 // 4MiB
-
 
 class ThumbnailDownloader<in T>(
     private val responseHandler: Handler,
@@ -52,18 +49,18 @@ class ThumbnailDownloader<in T>(
             }
         }
     private lateinit var requestHandler: Handler
-    private val requestMap = ConcurrentHashMap<T, Pair<String, List<String>>>()
+    private val requestMap = ConcurrentHashMap<T, String>()
     private val flickrFetch = FlickrFetch()
-    private val cache = LruCache<String, Bitmap>(cacheSize)
+
 
     override fun quit(): Boolean {
         hasQuit = true
         return super.quit()
     }
 
-    fun queueThumbnail(target: T, url: String, urlPool: List<String>) {
+    fun queueThumbnail(target: T, url: String) {
         Log.i(TAG, "Got a URL: $url")
-        requestMap[target] = Pair(url, urlPool)
+        requestMap[target] = url
         requestHandler.obtainMessage(MESSAGE_DOWNLOAD, target)
             .sendToTarget()
     }
@@ -84,49 +81,15 @@ class ThumbnailDownloader<in T>(
 
     private fun handleRequest(target: T) {
         val url = requestMap[target] ?: return
-        var bitmap: Bitmap? = null
+        val bitmap = flickrFetch.fetchPhotos(url) ?: return
 
-        cacheImages(url.second)
-        bitmap = cacheImage(url.first)
-
-        Log.d(TAG, "CACHE: ${cache.toString()}")
         responseHandler.post(Runnable {
-            if (requestMap[target] != url || hasQuit) {
+            if(requestMap[target] != url || hasQuit) {
                 return@Runnable
             }
 
             requestMap.remove(target)
-            onThumbnailDownloaded(target, bitmap!!)
+            onThumbnailDownloaded(target, bitmap)
         })
-    }
-
-    private fun cacheImages(urls: List<String>): Bitmap? {
-        var bitmap: Bitmap? = null
-        synchronized(cache) {
-            for(url in urls) {
-                if(cache.get(url) == null) {
-                    bitmap = flickrFetch.fetchPhotos(url)
-                    cache.put(url, bitmap)
-                } else {
-                    bitmap = cache.get(url)
-                }
-            }
-        }
-        return bitmap
-    }
-
-
-    private fun cacheImage(url: String): Bitmap? {
-        var bitmap: Bitmap? = null
-        synchronized(cache) {
-            if(cache.get(url) == null) {
-                bitmap = flickrFetch.fetchPhotos(url)
-                cache.put(url, bitmap)
-            } else {
-                bitmap = cache.get(url)
-            }
-        }
-
-        return bitmap
     }
 }
