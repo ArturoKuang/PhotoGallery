@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.StrictMode
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +19,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.photogallery.api.ThumbnailDownloader
+import kotlin.math.max
+import kotlin.math.min
 
 private const val TAG = "PhotoGalleryFragment"
 private const val COLUMN_WIDTH = 300
@@ -104,7 +107,21 @@ class PhotoGalleryFragment : Fragment() {
                 R.drawable.bill_up_close) ?: ColorDrawable()
             holder.bindDrawable(placeHolder)
 
-            thumbnailDownloader.queueThumbnail(holder, galleryItem.url)
+            val numImagesToPreload = 10
+
+            var previousImages: Int = position - numImagesToPreload
+            previousImages = max(0, position)
+
+            var nextImages: Int = (position + numImagesToPreload)
+            nextImages = min(nextImages, galleryItems.size)
+
+
+            val urlPool: List<String> = galleryItems.subList(previousImages, nextImages)
+                .map {
+                    galleryItem -> galleryItem.url
+            }
+
+            thumbnailDownloader.queueThumbnail(holder, galleryItem.url, urlPool)
         }
 
         override fun getItemCount(): Int = galleryItems.size

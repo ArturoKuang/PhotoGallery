@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "ThumbnailDownloader"
 private const val MESSAGE_DOWNLOAD = 0
-private const val cacheSize = 4 * 1024 * 1024 // 4MiB
+private const val cacheSize = 40 * 1024 * 1024 // 4MiB
 
 
 class ThumbnailDownloader<in T>(
@@ -52,7 +52,7 @@ class ThumbnailDownloader<in T>(
             }
         }
     private lateinit var requestHandler: Handler
-    private val requestMap = ConcurrentHashMap<T, String>()
+    private val requestMap = ConcurrentHashMap<T, Pair<String, List<String>>>()
     private val flickrFetch = FlickrFetch()
     private val cache = LruCache<String, Bitmap>(cacheSize)
 
@@ -61,9 +61,9 @@ class ThumbnailDownloader<in T>(
         return super.quit()
     }
 
-    fun queueThumbnail(target: T, url: String) {
+    fun queueThumbnail(target: T, url: String, urlPool: List<String>) {
         Log.i(TAG, "Got a URL: $url")
-        requestMap[target] = url
+        requestMap[target] = Pair(url, urlPool)
         requestHandler.obtainMessage(MESSAGE_DOWNLOAD, target)
             .sendToTarget()
     }
@@ -86,15 +86,10 @@ class ThumbnailDownloader<in T>(
         val url = requestMap[target] ?: return
         var bitmap: Bitmap? = null
 
-        synchronized(cache) {
-            if(cache.get(url) == null) {
-                bitmap = flickrFetch.fetchPhotos(url) ?: return
-                cache.put(url, bitmap)
-            } else {
-                bitmap = cache.get(url)
-            }
-        }
+        cacheImages(url.second)
+        bitmap = cacheImage(url.first)
 
+        Log.d(TAG, "CACHE: ${cache.toString()}")
         responseHandler.post(Runnable {
             if (requestMap[target] != url || hasQuit) {
                 return@Runnable
@@ -103,5 +98,35 @@ class ThumbnailDownloader<in T>(
             requestMap.remove(target)
             onThumbnailDownloaded(target, bitmap!!)
         })
+    }
+
+    private fun cacheImages(urls: List<String>): Bitmap? {
+        var bitmap: Bitmap? = null
+        synchronized(cache) {
+            for(url in urls) {
+                if(cache.get(url) == null) {
+                    bitmap = flickrFetch.fetchPhotos(url)
+                    cache.put(url, bitmap)
+                } else {
+                    bitmap = cache.get(url)
+                }
+            }
+        }
+        return bitmap
+    }
+
+
+    private fun cacheImage(url: String): Bitmap? {
+        var bitmap: Bitmap? = null
+        synchronized(cache) {
+            if(cache.get(url) == null) {
+                bitmap = flickrFetch.fetchPhotos(url)
+                cache.put(url, bitmap)
+            } else {
+                bitmap = cache.get(url)
+            }
+        }
+
+        return bitmap
     }
 }
