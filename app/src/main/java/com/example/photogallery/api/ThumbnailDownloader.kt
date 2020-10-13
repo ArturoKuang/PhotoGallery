@@ -50,7 +50,7 @@ class ThumbnailDownloader<in T>(
         }
     private lateinit var requestHandler: Handler
     private val requestMap = ConcurrentHashMap<T, String>()
-    private val flickrFetch = FlickrFetch()
+    private val flickrFetch = FlickrFetcher()
 
 
     override fun quit(): Boolean {
