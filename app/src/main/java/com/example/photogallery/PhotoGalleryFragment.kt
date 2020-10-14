@@ -1,12 +1,15 @@
 package com.example.photogallery
 
+import android.app.Activity
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.hardware.input.InputManager
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
@@ -87,6 +90,7 @@ class PhotoGalleryFragment : Fragment() {
         val searchItem: MenuItem = menu.findItem(R.id.menu_item_search)
         val searchView = searchItem.actionView as SearchView
 
+
         searchView.apply {
 
             setOnQueryTextListener(object: SearchView.OnQueryTextListener {
@@ -98,6 +102,7 @@ class PhotoGalleryFragment : Fragment() {
                 override fun onQueryTextSubmit(queryText: String): Boolean {
                     Log.d(TAG, "QueryTextChange: $queryText")
                     photoGalleryViewModel.fetchPhotos(queryText)
+                    searchView.onActionViewCollapsed()
                     return true
                 }
             })
