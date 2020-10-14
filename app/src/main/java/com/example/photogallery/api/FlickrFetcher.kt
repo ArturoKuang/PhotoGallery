@@ -1,5 +1,6 @@
 package com.example.photogallery.api
 
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
@@ -7,8 +8,6 @@ import androidx.annotation.WorkerThread
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.photogallery.GalleryItem
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Call
