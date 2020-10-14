@@ -15,6 +15,10 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
 import com.example.photogallery.api.ThumbnailDownloader
 
 private const val TAG = "PhotoGalleryFragment"
@@ -37,8 +41,8 @@ class PhotoGalleryFragment : Fragment() {
                 val drawable = BitmapDrawable(resources, bitmap)
                 photoHolder.bindDrawable(drawable)
             }
-        lifecycle.addObserver(thumbnailDownloader.fragmentLifeCycleObserver)
 
+        lifecycle.addObserver(thumbnailDownloader.fragmentLifeCycleObserver)
         setHasOptionsMenu(true)
     }
 
@@ -106,6 +110,15 @@ class PhotoGalleryFragment : Fragment() {
                 searchView.setQuery(photoGalleryViewModel.searchTerm, false)
             }
         }
+
+        val toggleItem = menu.findItem(R.id.menu_item_toggle_polling)
+        val isPolling = QueryPreferences.isPolling(requireContext())
+        val toggleItemTitle = if(isPolling) {
+            R.string.stop_polling
+        } else {
+            R.string.start_polling
+        }
+        toggleItem.setTitle(toggleItemTitle)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -114,6 +127,10 @@ class PhotoGalleryFragment : Fragment() {
                 photoGalleryViewModel.fetchPhotos("")
                 true
             }
+            R.id.menu_item_toggle_polling -> {
+                val isPolling
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
