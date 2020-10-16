@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
+import android.webkit.WebViewClient
 
 private const val ARG_URI = "photo_page_url"
 class PhotoPageFragment : VisibleFragment() {
@@ -27,6 +28,10 @@ class PhotoPageFragment : VisibleFragment() {
         val view = inflater.inflate(R.layout.fragment_photo_page, container, false)
 
         webView = view.findViewById(R.id.web_view)
+        webView.settings.javaScriptEnabled = true
+        webView.webViewClient = WebViewClient()
+        webView.loadUrl(uri.toString())
+        
         return view
     }
 
