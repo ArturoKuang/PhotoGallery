@@ -172,7 +172,7 @@ class PhotoGalleryFragment : VisibleFragment() {
         }
 
         override fun onClick(view: View) {
-            val intent = Intent(Intent.ACTION_VIEW, galleryItem.photoPageUri)
+            val intent = PhotoPageActivity.newIntent(requireContext(), galleryItem.photoPageUri)
             startActivity(intent)
         }
     }

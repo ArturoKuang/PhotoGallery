@@ -14,7 +14,7 @@ class PhotoGalleryActivity : AppCompatActivity() {
         if(isFragmentContainerEmpty) {
             supportFragmentManager
                 .beginTransaction()
-                .add(R.id.fragmentContainer, PhotoGalleryFragment.newInstance())
+                .add(R.id.fragment_container, PhotoGalleryFragment.newInstance())
                 .commit()
         }
     }
